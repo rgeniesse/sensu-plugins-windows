@@ -18,21 +18,14 @@
     powershell.exe -file check-windows-log.ps1 -LogPath example.log -Pattern error
 #>
 
-# [CmdletBinding()]
-# Param(
-#   [Parameter(Mandatory=$True)]
-#   [string]$LogPath,
-#   [Parameter(Mandatory=$True)]
-#   [string]$Pattern
-# )
-
-
 # TODO: Find a windows place to make state file.
 #       Make state files based on log path to ensure uniqueness
-#       Get rid of hard coded stuff
-#       Incoperate new loggic into current logic
-#       Ensure old pattern searching logic looks at new way to get log file entries
+#       Incoperate new logic into current logic
+#       Add better log output
 #       Test on windows
+#       Make script more readable (white space)
+#       Update top comments.
+#       Functionize???
 
 #       QA:
 #       1 Run script with only log file existing, no state file.
@@ -42,31 +35,45 @@
 #       4a Run again to ensure expected behaivor.
 #       5 Run script against large log file (1gb+)
 #       5a Possible other perfromance issues.
+#       6 Ensure array index won't look at the same log line twice.
+
+[CmdletBinding()]
+Param(
+  [Parameter(Mandatory=$True)]
+  [string]$LogPath,
+  [Parameter(Mandatory=$True)]
+  [string]$Pattern,
+  [Parameter(Mandatory=$False)]
+  [string]$StateFile = "/tmp/test.txt"
+)
 
 
-$ThisLogLength = Get-Content test.log | Measure-Object –Line
+if(Test-Path $LogPath){
+    $ThisLogLength = Get-Content $LogPath | Measure-Object –Line
 
-If(Test-Path /tmp/test.txt){
-  $previsouLength = Get-Content /tmp/test.txt
-  $myContent = Get-Content test.log | Select-Object -Index ($previsouLength..$ThisLogLength.Lines)
-  $myContent
-  $ThisLogLength.Lines | Out-File /tmp/test.txt
-}else{ #Create state file if not found
-  New-Item /tmp/test.txt -ItemType file | Out-Null
-  $ThisLogLength.Lines | Out-File /tmp/test.txt
-  $myContent = Get-Content test.log
-  $myContent
+    If(Test-Path $StateFile){
+    $previsouLength = Get-Content $StateFile
+    $myContent = Get-Content $LogPath | Select-Object -Index ($previsouLength..$ThisLogLength.Lines)
+    $ThisLogLength.Lines | Out-File $StateFile
+    }else{ #Create state file if not found
+    New-Item $StateFile -ItemType file | Out-Null
+    $ThisLogLength.Lines | Out-File $StateFile
+    $myContent = Get-Content $LogPath
+    }
+}else{
+    Write-Host "File at $LogPath was not found"
+    EXIT 1 #Should this be a 1 or 2? Unknown?
 }
 
 #Search for pattern inside of File
-# $ThisLog = Select-String -Path $LogPath -Pattern $Pattern -AllMatch
+$ThisLog = Select-String -InputObject $myContent -Pattern $Pattern -AllMatch
 
 #Show matched lines if they exist
-# If($ThisLog -eq $null ){
-#   "CheckLog OK: The pattern doesn't exist in log"
-#   EXIT 0
-# }else{
-#   $ThisLog
-#   "CheckLog CRITICAL"
-#   EXIT 2
-# }
+If($ThisLog -eq $null ){
+  "CheckLog OK: The pattern doesn't exist in $LogPath"
+  EXIT 0
+}else{
+  $ThisLog
+  "CheckLog CRITICAL"
+  EXIT 2
+}
