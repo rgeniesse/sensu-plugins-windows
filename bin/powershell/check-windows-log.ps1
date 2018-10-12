@@ -52,8 +52,8 @@ if(Test-Path $LogPath){
     $ThisLogLength = Get-Content $LogPath | Measure-Object –Line
 
     If(Test-Path $StateFile){
-    $previsouLength = Get-Content $StateFile
-    $myContent = Get-Content $LogPath | Select-Object -Index ($previsouLength..$ThisLogLength.Lines)
+    $previousLength = Get-Content $StateFile
+    $myContent = Get-Content $LogPath | Select-Object -Index ($previousLength..$ThisLogLength.Lines)
     $ThisLogLength.Lines | Out-File $StateFile
     }else{ #Create state file if not found
     New-Item $StateFile -ItemType file | Out-Null
