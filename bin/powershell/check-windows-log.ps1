@@ -18,11 +18,9 @@
     powershell.exe -file check-windows-log.ps1 -LogPath example.log -Pattern error
 #>
 
-# TODO: Find a windows place to make state file.
-#       Make state files based on log path to ensure uniqueness
+# TODO: Get state file to be unique based on log path
 #       Incoperate new logic into current logic
 #       Add better log output
-#       Test on windows
 #       Make script more readable (white space)
 #       Update top comments.
 #       Functionize???
@@ -45,7 +43,7 @@ Param(
   [Parameter(Mandatory=$True)]
   [string]$Pattern,
   [Parameter(Mandatory=$False)]
-  [string]$StateFile = "C:\tmp\check_log.txt"
+  [string]$StateFile = "$env:ProgramData\sensu-plugins\check-windows\check-windows-log"
 )
 
 
@@ -57,13 +55,13 @@ if(Test-Path $LogPath){
     $myContent = Get-Content $LogPath | Select-Object -Index ($previousLength..$ThisLogLength.Lines)
     $ThisLogLength.Lines | Out-File $StateFile
     }else{ #Create state file and directory if not found
-    New-Item $StateFile -ItemType file | Out-Null
+    New-Item -Path $StateFile -ItemType file -Force | Out-Null
     $ThisLogLength.Lines | Out-File $StateFile
     $myContent = Get-Content $LogPath
     }
 }else{
     Write-Host "File at $LogPath was not found"
-    EXIT 1 #Should this be a 1 or 2? Unknown?
+    EXIT 1
 }
 
 #Search for pattern inside of File
