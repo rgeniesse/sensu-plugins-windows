@@ -36,6 +36,7 @@
 #       5 Run script against large log file (1gb+)
 #       5a Possible other perfromance issues.
 #       6 Ensure array index won't look at the same log line twice.
+#       7 Ensure encodings work on windows (dashes/quotes)
 
 [CmdletBinding()]
 Param(
@@ -44,18 +45,18 @@ Param(
   [Parameter(Mandatory=$True)]
   [string]$Pattern,
   [Parameter(Mandatory=$False)]
-  [string]$StateFile = "/tmp/test.txt"
+  [string]$StateFile = "C:\tmp\check_log.txt"
 )
 
 
 if(Test-Path $LogPath){
-    $ThisLogLength = Get-Content $LogPath | Measure-Object –Line
+    $ThisLogLength = Get-Content $LogPath | Measure-Object -Line
 
-    If(Test-Path $StateFile){
+    if(Test-Path $StateFile){
     $previousLength = Get-Content $StateFile
     $myContent = Get-Content $LogPath | Select-Object -Index ($previousLength..$ThisLogLength.Lines)
     $ThisLogLength.Lines | Out-File $StateFile
-    }else{ #Create state file if not found
+    }else{ #Create state file and directory if not found
     New-Item $StateFile -ItemType file | Out-Null
     $ThisLogLength.Lines | Out-File $StateFile
     $myContent = Get-Content $LogPath
@@ -69,7 +70,7 @@ if(Test-Path $LogPath){
 $ThisLog = Select-String -InputObject $myContent -Pattern $Pattern -AllMatch
 
 #Show matched lines if they exist
-If($ThisLog -eq $null ){
+if($ThisLog -eq $null ){
   "CheckLog OK: The pattern doesn't exist in $LogPath"
   EXIT 0
 }else{
