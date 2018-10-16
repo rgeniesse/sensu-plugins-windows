@@ -19,7 +19,6 @@
 #>
 
 # TODO: Get state file to be unique based on log path
-#       Incoperate new logic into current logic
 #       Add better log output
 #       Make script more readable (white space)
 #       Update top comments.
